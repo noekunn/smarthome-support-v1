@@ -1,0 +1,18 @@
+name: "smarthome_support_v1"
+version: "0.1.0"
+description: "A real-world smart-home support desk environment for agent training."
+entry_point: "server:SmartHomeSupportEnv"
+tasks:
+  - id: "password-reset"
+    description: "Respond to a password reset request with the correct link."
+    difficulty: "easy"
+  - id: "camera-offline"
+    description: "Diagnose and solve a camera connectivity issue."
+    difficulty: "medium"
+  - id: "security-triage"
+    description: "Triage multiple tickets, prioritizing the security breach."
+    difficulty: "hard"
+metadata:
+  action_space: "SmartHomeAction"
+  observation_space: "SmartHomeObservation"
+  reward_model: "SmartHomeReward"

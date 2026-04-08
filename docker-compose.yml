@@ -1,0 +1,18 @@
+version: '3.8'
+services:
+  env:
+    build: .
+    ports:
+      - "7860:7860"
+    environment:
+      - API_KEY=${HF_TOKEN}
+      - MODEL_NAME=gpt-4o
+  inference:
+    build: .
+    command: python inference.py
+    depends_on:
+      - env
+    environment:
+      - HF_TOKEN=${HF_TOKEN}
+      - API_BASE_URL=http://env:7860/v1
+      - MODEL_NAME=gpt-4o
