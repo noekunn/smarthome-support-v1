@@ -82,8 +82,10 @@ def run_task(task_id: str):
         if done:
             break
             
+    # Ensure score falls within 0.0 to 1.0 just to handle floating point precision
     final_score = max(0.0, min(total_reward, 1.0))
-    success = final_score >= 0.5
+    success = final_score >= 0.7  # Requires high score for success
+    
     log_end(success=success, steps=step, score=final_score, rewards=rewards)
 
 def get_baseline_action(task_id: str, obs, step: int) -> SmartHomeAction:

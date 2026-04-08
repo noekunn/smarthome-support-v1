@@ -25,6 +25,7 @@ class SmartHomeSupportEnv:
         self.history: List[SmartHomeAction] = []
         self.step_count = 0
         self.max_steps = 10
+        self.accumulated_reward = 0.0
         self.done = False
         return self._get_observation()
 
@@ -35,37 +36,41 @@ class SmartHomeSupportEnv:
         self.step_count += 1
         self.history.append(action)
         
-        # Process action and calculate intermediate reward
-        reward = 0.0
+        step_reward = 0.0
         result_msg = "Action completed"
         
-        if action.action_type == ActionType.CLOSE_TICKET:
-            self.done = True
-            # Final grading
-            final_score = self.current_task.grade(self.history, self.state())
-            reward = final_score
-        elif action.action_type == ActionType.CHECK_DEVICE_STATUS:
+        # Determine intermediate progress rewards and messages
+        if action.action_type == ActionType.CHECK_DEVICE_STATUS:
             status = self.device_status.get(action.ticket_id, "unknown")
             if action.ticket_id == "T-200":
                 status = self.device_status.get("Camera-Yard", "unknown")
             elif action.ticket_id == "T-301":
                 status = self.device_status.get("Door-Lock", "unknown")
             result_msg = f"Device status for {action.ticket_id}: {status}"
-            reward = 0.05 # Small reward for information gathering
+            step_reward = 0.05  # Partial reward for info gathering
+            
         elif action.action_type == ActionType.REPLY:
-             result_msg = f"Replied to {action.ticket_id}: {action.content[:30]}..."
-             reward = 0.05 # Small reward for taking action
-        
-        if self.step_count >= self.max_steps:
+             content_snippet = action.content[:30] + "..." if action.content else "None"
+             result_msg = f"Replied to {action.ticket_id}: {content_snippet}"
+             step_reward = 0.05  # Partial reward for communicating
+
+        elif action.action_type == ActionType.PRIORITIZE_TICKET:
+             result_msg = f"Ticket {action.ticket_id} priority set to {action.priority}"
+             step_reward = 0.05  # Partial reward for triage
+
+        # Check for episode termination
+        if action.action_type == ActionType.CLOSE_TICKET or self.step_count >= self.max_steps:
             self.done = True
-            # Final grading if not already closed
-            if reward < 1.0:
-                 reward = self.current_task.grade(self.history, self.state())
+            final_grade = self.current_task.grade(self.history, self.state())
+            # Delta reward shaping: Ensure sum of all step rewards matches the final grade exactly
+            step_reward = final_grade - self.accumulated_reward
+
+        self.accumulated_reward += step_reward
 
         obs = self._get_observation()
         obs.last_action_result = result_msg
         
-        return obs, reward, self.done, {}
+        return obs, step_reward, self.done, {}
 
     def state(self) -> Dict[str, Any]:
         return {
