@@ -82,8 +82,9 @@ def run_task(task_id: str):
         if done:
             break
             
-    success = total_reward >= 0.5
-    log_end(success=success, steps=step, score=total_reward, rewards=rewards)
+    final_score = max(0.0, min(total_reward, 1.0))
+    success = final_score >= 0.5
+    log_end(success=success, steps=step, score=final_score, rewards=rewards)
 
 def get_baseline_action(task_id: str, obs, step: int) -> SmartHomeAction:
     if task_id == "password-reset":
